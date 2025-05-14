@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sávváltós Akadálykerülő Játék - Nehézségi Szintekkel</title>
+    <title>Sávváltós Akadálykerülő Játék - Felhasználónévvel és Pontszámmal Jobbra</title>
     <style>
         body {
             margin: 0;
@@ -16,12 +16,18 @@
             overflow: hidden;
         }
 
+        #game-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
         #game-container {
             position: relative;
             width: 400px;
             height: 600px;
             background-color: #333;
             overflow: hidden;
+            margin-right: 20px;
         }
 
         #game-road {
@@ -83,19 +89,28 @@
             z-index: 50;
         }
 
-        #score-container {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+        #info-container {
             color: white;
-            z-index: 200;
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        #user-name-display {
+            font-size: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
         }
 
         #score {
             font-size: 36px;
             font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #high-score {
+            font-size: 16px;
             margin-bottom: 10px;
         }
 
@@ -125,6 +140,11 @@
 
         #final-score {
             font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        #final-high-score {
+            font-size: 18px;
             margin-bottom: 30px;
         }
 
@@ -143,7 +163,7 @@
             background-color: #4a89dc;
         }
 
-        #difficulty-selector {
+        #user-name-input-container {
             position: absolute;
             top: 0;
             left: 0;
@@ -151,6 +171,49 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.8);
             display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 500;
+            color: white;
+        }
+
+        #user-name-input-container h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        #user-name-input {
+            padding: 10px;
+            font-size: 18px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            width: 250px;
+        }
+
+        #submit-user-name-btn {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #submit-user-name-btn:hover {
+            background-color: #27ae60;
+        }
+
+        #difficulty-selector {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -190,20 +253,25 @@
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="game-road">
-            <div class="lane"></div>
-            <div class="lane"></div>
-            <div class="lane"></div>
+    <div id="game-wrapper">
+        <div id="game-container">
+            <div id="game-road">
+                <div class="lane"></div>
+                <div class="lane"></div>
+                <div class="lane"></div>
+            </div>
+            <div id="player"></div>
         </div>
-        <div id="player"></div>
-        <div id="score-container">
+        <div id="info-container">
+            <div id="user-name-display"></div>
             <div id="score">Pontszám: 0</div>
+            <div id="high-score">Legjobb: 0</div>
             <div id="difficulty-display">Nehézség: Közepes</div>
         </div>
         <div id="game-over">
             <h2>Játék Vége!</h2>
             <div id="final-score">Végső pontszám: 0</div>
+            <div id="final-high-score">Legjobb pontszám: 0</div>
             <div style="display: flex; gap: 10px;">
                 <button id="restart-btn">Újrakezdés</button>
                 <button id="change-difficulty-btn">Nehézség Változtatása</button>
@@ -218,11 +286,18 @@
                 <button id="insane-btn">Őrült</button>
             </div>
         </div>
+        <div id="user-name-input-container">
+            <h2>Add meg a felhasználóneved</h2>
+            <input type="text" id="user-name-input">
+            <button id="submit-user-name-btn">Mentés</button>
+        </div>
     </div>
 
     <script>
         // Játék változók
         let score = 0;
+        let highScore = localStorage.getItem('highscore') || 0;
+        let userName = localStorage.getItem('userName') || '';
         let speed = 3;
         let isGameOver = false;
         let lanePositions = [65, 200, 335]; // A három sáv középpontjai
@@ -279,9 +354,11 @@
         const player = document.getElementById('player');
         const gameContainer = document.getElementById('game-container');
         const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('high-score');
         const difficultyDisplay = document.getElementById('difficulty-display');
         const gameOverElement = document.getElementById('game-over');
         const finalScoreElement = document.getElementById('final-score');
+        const finalHighScoreElement = document.getElementById('final-high-score');
         const restartBtn = document.getElementById('restart-btn');
         const changeDifficultyBtn = document.getElementById('change-difficulty-btn');
         const difficultySelector = document.getElementById('difficulty-selector');
@@ -290,6 +367,38 @@
         const hardBtn = document.getElementById('hard-btn');
         const insaneBtn = document.getElementById('insane-btn');
         const gameRoad = document.getElementById('game-road');
+        const infoContainer = document.getElementById('info-container');
+        const userNameDisplay = document.getElementById('user-name-display');
+        const userNameInputContainer = document.getElementById('user-name-input-container');
+        const userNameInput = document.getElementById('user-name-input');
+        const submitUserNameBtn = document.getElementById('submit-user-name-btn');
+
+        // Felhasználónév betöltése és megjelenítése, vagy bekérése
+        if (userName) {
+            userNameDisplay.textContent = `Játékos: ${userName}`;
+            userNameInputContainer.style.display = 'none';
+            difficultySelector.style.display = 'flex';
+        } else {
+            userNameInputContainer.style.display = 'flex';
+            difficultySelector.style.display = 'none';
+        }
+
+        // Felhasználónév mentése
+        submitUserNameBtn.addEventListener('click', function() {
+            const enteredName = userNameInput.value.trim();
+            if (enteredName) {
+                userName = enteredName;
+                localStorage.setItem('userName', userName);
+                userNameDisplay.textContent = `Játékos: ${userName}`;
+                userNameInputContainer.style.display = 'none';
+                difficultySelector.style.display = 'flex';
+            } else {
+                alert('Kérlek, add meg a felhasználóneved!');
+            }
+        });
+
+        // Kezdeti highscore megjelenítése
+        highScoreElement.textContent = `Legjobb: ${highScore}`;
 
         // Játékos pozícionálása a kezdeti sávba
         player.style.left = lanePositions[currentLane] - player.offsetWidth / 2 + 'px';
@@ -338,7 +447,7 @@
 
         // Billentyűzet eseményfigyelő
         document.addEventListener('keydown', function(event) {
-            if (isGameOver || difficultySelector.style.display !== 'none') return;
+            if (isGameOver || difficultySelector.style.display !== 'none' || userNameInputContainer.style.display !== 'none') return;
 
             if (event.key === 'ArrowLeft' || event.key === 'a') {
                 moveLeft();
@@ -525,7 +634,15 @@
             clearInterval(bonusInterval);
             clearInterval(roadLineInterval);
 
+            // Highscore frissítése
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highscore', highScore);
+                highScoreElement.textContent = `Legjobb: ${highScore}`;
+            }
+
             finalScoreElement.textContent = `Végső pontszám: ${score}`;
+            finalHighScoreElement.textContent = `Legjobb pontszám: ${highScore}`;
             gameOverElement.style.display = 'flex';
         }
 
@@ -584,6 +701,9 @@
             clearInterval(roadLineInterval);
             clearGameElements();
 
+            score = 0;
+            scoreElement.textContent = `Pontszám: ${score}`;
+
             // Nehézségválasztó megjelenítése
             gameOverElement.style.display = 'none';
             difficultySelector.style.display = 'flex';
@@ -603,7 +723,14 @@
         changeDifficultyBtn.addEventListener('click', changeDifficulty);
 
         // Kezdeti állapot
-        difficultySelector.style.display = 'flex';
+        if (!userName) {
+            userNameInputContainer.style.display = 'flex';
+            difficultySelector.style.display = 'none';
+        } else {
+            userNameDisplay.textContent = `Játékos: ${userName}`;
+            userNameInputContainer.style.display = 'none';
+            difficultySelector.style.display = 'flex';
+        }
 
     </script>
 </body>

@@ -5,8 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sávváltós Akadálykerülő Játék - Felhasználónévvel és Pontszámmal Jobbra</title>
     <link rel="stylesheet" href="ESTNAC/css/style.css">
+    <style>
+        
+    </style>
 </head>
 <body>
+    <div id="controls-info">
+        <h2>Leírás:</h2>
+        <p>Kerüld ki az akadályokat, igyekezz minél több érmét felszedni plusz pontért.</p>
+        <h2>Irányítás:</h2>
+        <p><b>Balra mozgás:</b> Bal nyíl (←) vagy 'A'</p>
+        <p><b>Jobbra mozgás:</b> Jobb nyíl (→) vagy 'D'</p>
+        <p><b>Szünet:</b> 'P' billentyű</p>
+    </div>
     <div id="game-wrapper">
         <div id="game-container">
             <div id="game-road">
@@ -16,12 +27,6 @@
             </div>
             <img id="player" src="ESTNAC/assets/images/car.png">
         </div>
-        <div id="info-container">
-            <div id="user-name-display"></div>
-            <div id="score">Pontszám: 0</div>
-            <div id="high-score">Legjobb: 0</div>
-            <div id="difficulty-display">Nehézség: Közepes</div>
-        </div>
         <div id="game-over">
             <div class="game-over-overlay">
                 <h2>Játék Vége!</h2>
@@ -30,6 +35,8 @@
                 <div style="display: flex; gap: 10px;">
                     <button id="restart-btn">Újrakezdés</button>
                     <button id="change-difficulty-btn">Nehézség Változtatása</button>
+                    <button id="clear-data-btn">Adatok törlése</button> </div>
+
                 </div>
             </div>
         </div>
@@ -48,6 +55,17 @@
             <button id="submit-user-name-btn">Mentés</button>
         </div>
     </div>
+    <div id="info-container">
+        <div id="user-name-display"></div>
+        <div id="score">Pontszám: 0</div>
+        <div id="high-score">Legjobb: 0</div>
+        <div id="difficulty-display">Nehézség: Közepes</div>
+    </div>
+
+    <audio id="collisionSound" src="ESTNAC/assets/sounds/crash.mp3" preload="auto"></audio>
+    <audio id="bonusSound" src="ESTNAC/assets/sounds/bonus.mp3" preload="auto"></audio>
+
+    <div id="footer">Szekerczés István ESTNAC</div>
 
     <script src="http://code.jquery.com/jquery-latest.js"></script>
     <script src="ESTNAC/js/script.js"></script>

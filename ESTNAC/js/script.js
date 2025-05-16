@@ -1,11 +1,11 @@
-$(function() { // Shorthand for $(document).ready()
-    // Játék változók
+$(function() {
     let score = 0;
     let highScore = localStorage.getItem('highscore') || 0;
     let userName = localStorage.getItem('userName') || '';
     let speed = 3;
     let isGameOver = false;
-    let lanePositions = [ (400/3)/2, 400/2, 400*(5/6) ]; // Center of each lane: ~66.6, 200, ~333.3
+    let isPaused = false;
+    let lanePositions = [ (400/3)/2, 400/2, 400*(5/6) ];
     let currentLane = 1;
     let animationId;
     let obstacles = [];
@@ -19,10 +19,10 @@ $(function() { // Shorthand for $(document).ready()
     const ITEM_SPAWN_COOLDOWN = 350;
 
     const difficultySettings = {
-        easy: { initialSpeed: 2, speedIncrease: 0.1, obstacleInterval: 2000, minObstacleInterval: 1500, bonusFrequency: 5000, scoreMultiplier: 1 },
-        medium: { initialSpeed: 3, speedIncrease: 0.2, obstacleInterval: 1500, minObstacleInterval: 1000, bonusFrequency: 8000, scoreMultiplier: 1 },
-        hard: { initialSpeed: 5, speedIncrease: 0.5, obstacleInterval: 1200, minObstacleInterval: 800, bonusFrequency: 12000, scoreMultiplier: 2 },
-        insane: { initialSpeed: 8, speedIncrease: 0.6, obstacleInterval: 1000, minObstacleInterval: 600, bonusFrequency: 15000, scoreMultiplier: 3 }
+        easy: { initialSpeed: 4, speedIncrease: 0.1, obstacleInterval: 2000, minObstacleInterval: 1500, bonusFrequency: 5000, scoreMultiplier: 1 },
+        medium: { initialSpeed: 6, speedIncrease: 0.1, obstacleInterval: 1500, minObstacleInterval: 1000, bonusFrequency: 8000, scoreMultiplier: 1 },
+        hard: { initialSpeed: 8, speedIncrease: 0.2, obstacleInterval: 1200, minObstacleInterval: 800, bonusFrequency: 12000, scoreMultiplier: 2 },
+        insane: { initialSpeed: 12, speedIncrease: 0.3, obstacleInterval: 1000, minObstacleInterval: 600, bonusFrequency: 15000, scoreMultiplier: 3 }
     };
     let currentDifficulty = 'medium';
 
@@ -45,6 +45,12 @@ $(function() { // Shorthand for $(document).ready()
     const userNameInputContainer = $('#user-name-input-container');
     const userNameInput = $('#user-name-input');
     const submitUserNameBtn = $('#submit-user-name-btn');
+    const clearDataBtn = $('#clear-data-btn');
+    const collisionSound = $('#collisionSound')[0];
+    const bonusSound = $('#bonusSound')[0];
+
+    const blurAmount = 'blur(5px)';
+    const body = $('body');
 
     if (userName) {
         userNameDisplay.text(`Játékos: ${userName}`);
@@ -63,6 +69,7 @@ $(function() { // Shorthand for $(document).ready()
             userNameDisplay.text(`Játékos: ${userName}`);
             userNameInputContainer.hide();
             difficultySelector.css('display', 'flex');
+            gameContainer.css('filter', blurAmount);
         } else {
             alert('Kérlek, add meg a felhasználóneved!');
         }
@@ -71,10 +78,10 @@ $(function() { // Shorthand for $(document).ready()
     highScoreElement.text(`Legjobb: ${highScore}`);
     player.css('left', lanePositions[currentLane] - player.outerWidth() / 2 + 'px');
 
-    easyBtn.on('click', function() { setDifficulty('easy'); difficultySelector.hide(); startGame(); });
-    mediumBtn.on('click', function() { setDifficulty('medium'); difficultySelector.hide(); startGame(); });
-    hardBtn.on('click', function() { setDifficulty('hard'); difficultySelector.hide(); startGame(); });
-    insaneBtn.on('click', function() { setDifficulty('insane'); difficultySelector.hide(); startGame(); });
+    easyBtn.on('click', function() { setDifficulty('easy'); difficultySelector.hide(); startGame(); gameContainer.css('filter', 'none'); });
+    mediumBtn.on('click', function() { setDifficulty('medium'); difficultySelector.hide(); startGame(); gameContainer.css('filter', 'none'); });
+    hardBtn.on('click', function() { setDifficulty('hard'); difficultySelector.hide(); startGame(); gameContainer.css('filter', 'none'); });
+    insaneBtn.on('click', function() { setDifficulty('insane'); difficultySelector.hide(); startGame(); gameContainer.css('filter', 'none'); });
 
     function setDifficulty(difficulty) {
         currentDifficulty = difficulty;
@@ -89,7 +96,25 @@ $(function() { // Shorthand for $(document).ready()
         if (isGameOver || difficultySelector.is(':visible') || userNameInputContainer.is(':visible')) return;
         if (event.key === 'ArrowLeft' || event.key === 'a') moveLeft();
         else if (event.key === 'ArrowRight' || event.key === 'd') moveRight();
+        else if (event.key === 'p') togglePause();
     });
+
+    function togglePause() {
+        if (!isGameOver) {
+            isPaused = !isPaused;
+            if (isPaused) {
+                cancelAnimationFrame(animationId);
+                clearInterval(obstacleIntervalId);
+                clearInterval(bonusIntervalId);
+                gameContainer.css('filter', blurAmount);
+            } else {
+                updateGame();
+                obstacleIntervalId = setInterval(createObstacle, difficultySettings[currentDifficulty].obstacleInterval);
+                bonusIntervalId = setInterval(createBonus, difficultySettings[currentDifficulty].bonusFrequency);
+                gameContainer.css('filter', 'none');
+            }
+        }
+    }
 
     function movePlayer() {
         player.css('left', lanePositions[currentLane] - player.outerWidth() / 2 + 'px');
@@ -127,66 +152,66 @@ $(function() { // Shorthand for $(document).ready()
     }
 
     function createObstacle() {
-    const now = Date.now();
-    if (now - lastObstacleTime < minObstacleIntervalCurrent) return;
+        const now = Date.now();
+        if (now - lastObstacleTime < minObstacleIntervalCurrent || isPaused) return;
 
-    let lanesToSpawn = [];
-    if (currentDifficulty === 'insane' && Math.random() < 0.5 || currentDifficulty === 'hard' && Math.random() < 0.3 || currentDifficulty === 'medium' && Math.random() < 0.15) {
-        let firstLane = findAvailableLaneIndex();
-        if (firstLane !== -1) {
-            lanesToSpawn.push(firstLane);
-            let secondLane = findAvailableLaneIndex();
-            if (secondLane !== -1 && secondLane !== firstLane) {
-                lanesToSpawn.push(secondLane);
+        let lanesToSpawn = [];
+        if (currentDifficulty === 'insane' && Math.random() < 0.5 || currentDifficulty === 'hard' && Math.random() < 0.3 || currentDifficulty === 'medium' && Math.random() < 0.15) {
+            let firstLane = findAvailableLaneIndex();
+            if (firstLane !== -1) {
+                lanesToSpawn.push(firstLane);
+                let secondLane = findAvailableLaneIndex();
+                if (secondLane !== -1 && secondLane !== firstLane) {
+                    lanesToSpawn.push(secondLane);
+                }
+            }
+        } else {
+            const singleLane = findAvailableLaneIndex();
+            if (singleLane !== -1) {
+                lanesToSpawn.push(singleLane);
             }
         }
-    } else {
-        const singleLane = findAvailableLaneIndex();
-        if (singleLane !== -1) {
-            lanesToSpawn.push(singleLane);
+
+        if (lanesToSpawn.length === 0) return;
+
+        lastObstacleTime = now;
+
+        const obstacleImages = [
+            'ESTNAC/assets/images/cone.png',
+            'ESTNAC/assets/images/log.png',
+            'ESTNAC/assets/images/rock.png'
+        ];
+
+        lanesToSpawn.forEach(laneIndex => {
+            const randomImageIndex = Math.floor(Math.random() * obstacleImages.length);
+            const obstacle = $('<img>').addClass('obstacle').attr('src', obstacleImages[randomImageIndex]);
+            let obstacleWidth = 60;
+            if (obstacleImages[randomImageIndex] === 'ESTNAC/assets/images/log.png') {
+                obstacleWidth = 120;
+            }
+            obstacle.css('left', lanePositions[laneIndex] - obstacleWidth / 2 + 'px');
+            obstacle.css('width', obstacleWidth + 'px');
+
+            gameContainer.append(obstacle);
+            obstacles.push(obstacle);
+            laneLastSpawnTime[laneIndex] = now;
+        });
+
+        if (score > 0 && score % 10 === 0) {
+            speed += difficultySettings[currentDifficulty].speedIncrease;
+            if (minObstacleIntervalCurrent > 400) {
+                minObstacleIntervalCurrent -= 50;
+            }
         }
     }
-
-    if (lanesToSpawn.length === 0) return;
-
-    lastObstacleTime = now;
-
-    const obstacleImages = [
-        'ESTNAC/assets/images/cone.png',
-        'ESTNAC/assets/images/log.png',
-        'ESTNAC/assets/images/rock.png'
-    ];
-
-    lanesToSpawn.forEach(laneIndex => {
-        const randomImageIndex = Math.floor(Math.random() * obstacleImages.length);
-        const obstacle = $('<img>').addClass('obstacle').attr('src', obstacleImages[randomImageIndex]);
-        let obstacleWidth = 60; // Alapértelmezett szélesség
-        if (obstacleImages[randomImageIndex] === 'ESTNAC/assets/images/log.png') {
-            obstacleWidth = 120; // Dupla szélesség a log-nak
-        }
-        obstacle.css('left', lanePositions[laneIndex] - obstacleWidth / 2 + 'px');
-        obstacle.css('width', obstacleWidth + 'px'); //explicit módon beállítjuk a szélességet
-
-        gameContainer.append(obstacle);
-        obstacles.push(obstacle);
-        laneLastSpawnTime[laneIndex] = now;
-    });
-
-    if (score > 0 && score % 10 === 0) {
-        speed += difficultySettings[currentDifficulty].speedIncrease;
-        if (minObstacleIntervalCurrent > 400) {
-            minObstacleIntervalCurrent -= 50;
-        }
-    }
-}
 
     function createBonus() {
-        if (isGameOver) return;
+        if (isGameOver || isPaused) return;
 
         const laneIndex = findAvailableLaneIndex();
         if (laneIndex === -1) return;
 
-        const bonus = $('<div>').addClass('bonus');
+        const bonus = $('<img>').addClass('bonus').attr('src', 'ESTNAC/assets/images/coin.png');
         const bonusWidth = 40;
         bonus.css('left', lanePositions[laneIndex] - bonusWidth / 2 + 'px');
 
@@ -196,7 +221,7 @@ $(function() { // Shorthand for $(document).ready()
     }
 
     function updateGame() {
-        if (isGameOver) return;
+        if (isGameOver || isPaused) return;
 
         for (let i = obstacles.length - 1; i >= 0; i--) {
             const obstacle = obstacles[i];
@@ -222,6 +247,7 @@ $(function() { // Shorthand for $(document).ready()
             bonus.css('top', bonusY + 'px');
 
             if (isCollision(bonus[0], player[0])) {
+                bonusSound.play();
                 bonus.remove();
                 bonuses.splice(i, 1);
                 score += 5 * difficultySettings[currentDifficulty].scoreMultiplier;
@@ -245,9 +271,12 @@ $(function() { // Shorthand for $(document).ready()
 
     function gameOver() {
         isGameOver = true;
+        isPaused = false;
         cancelAnimationFrame(animationId);
         clearInterval(obstacleIntervalId);
         clearInterval(bonusIntervalId);
+
+        collisionSound.play();
 
         gameContainer.css('filter', 'blur(5px)');
         gameOverElement.css('display', 'flex');
@@ -273,6 +302,7 @@ $(function() { // Shorthand for $(document).ready()
         minObstacleIntervalCurrent = difficultySettings[currentDifficulty].minObstacleInterval;
 
         isGameOver = false;
+        isPaused = false;
         currentLane = 1;
         obstacles = [];
         bonuses = [];
@@ -292,7 +322,7 @@ $(function() { // Shorthand for $(document).ready()
         clearInterval(bonusIntervalId);
 
         clearGameElements();
-        gameContainer.css('filter', 'none');
+        gameContainer.css('filter', blurAmount);
 
         score = 0;
         scoreElement.text(`Pontszám: ${score}`);
@@ -301,10 +331,12 @@ $(function() { // Shorthand for $(document).ready()
 
         gameOverElement.hide();
         difficultySelector.css('display', 'flex');
+        isPaused = false;
     }
 
     function startGame() {
         isGameOver = false;
+        isPaused = false;
         setDifficulty(currentDifficulty);
         movePlayer();
 
@@ -315,5 +347,9 @@ $(function() { // Shorthand for $(document).ready()
 
     restartBtn.on('click', restartGame);
     changeDifficultyBtn.on('click', changeDifficulty);
+    clearDataBtn.on('click', function() {
+        localStorage.clear();
+        location.reload();
+    });
     setDifficulty(currentDifficulty);
 });

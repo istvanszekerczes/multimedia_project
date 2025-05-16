@@ -1,0 +1,230 @@
+body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #222;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+#game-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+#game-container {
+    position: relative;
+    width: 400px;
+    height: 600px;
+    background-color: #333;
+    overflow: hidden;
+    margin-right: 20px;
+}
+
+#game-road {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: #444;
+}
+
+.lane {
+    position: absolute;
+    width: 33.33%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.lane:nth-child(1) {
+    left: 0;
+    border-right: 2px dashed white;
+}
+
+.lane:nth-child(2) {
+    left: 33.33%;
+    border-right: 2px dashed white;
+}
+
+.lane:nth-child(3) {
+    left: 66.66%;
+}
+
+#player {
+    position: absolute;
+    width: 50px;
+    height: 80px;
+    background-color: #5d9cec;
+    border-radius: 5px;
+    bottom: 20px;
+    left: 175px; /* Initial position, will be updated by JS */
+    transition: left 0.2s ease;
+    z-index: 100;
+}
+
+.obstacle {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background-color: #e74c3c;
+    border-radius: 5px;
+    top: -60px;
+}
+
+.bonus {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background-color: #2ecc71;
+    border-radius: 50%;
+    top: -40px;
+    z-index: 50;
+}
+
+#info-container {
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+}
+
+#user-name-display {
+    font-size: 20px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+#score {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+#high-score {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+#difficulty-display {
+    font-size: 18px;
+}
+
+#game-over {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none; /* Initially hidden */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 300;
+    color: white;
+}
+
+.game-over-overlay {
+    text-align: center;
+}
+
+#game-over h2 {
+    font-size: 36px;
+    margin-bottom: 20px;
+}
+
+#final-score {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+#final-high-score {
+    font-size: 18px;
+    margin-bottom: 30px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 18px;
+    background-color: #5d9cec;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+}
+
+button:hover {
+    background-color: #4a89dc;
+}
+
+#user-name-input-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex; /* Will be controlled by JS */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 500;
+    color: white;
+}
+
+#user-name-input-container h2 {
+    font-size: 32px;
+    margin-bottom: 20px;
+}
+
+#user-name-input {
+    padding: 10px;
+    font-size: 18px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    width: 250px;
+}
+
+#submit-user-name-btn {
+    padding: 10px 20px;
+    font-size: 18px;
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#submit-user-name-btn:hover {
+    background-color: #27ae60;
+}
+
+#difficulty-selector {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none; /* Initially hidden */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 400;
+    color: white;
+}
+
+#difficulty-selector h2 {
+    font-size: 32px;
+    margin-bottom: 30px;
+}
+
+#difficulty-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}

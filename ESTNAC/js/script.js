@@ -21,8 +21,8 @@ $(function() { // Shorthand for $(document).ready()
     const difficultySettings = {
         easy: { initialSpeed: 2, speedIncrease: 0.1, obstacleInterval: 2000, minObstacleInterval: 1500, bonusFrequency: 5000, scoreMultiplier: 1 },
         medium: { initialSpeed: 3, speedIncrease: 0.2, obstacleInterval: 1500, minObstacleInterval: 1000, bonusFrequency: 8000, scoreMultiplier: 1 },
-        hard: { initialSpeed: 4, speedIncrease: 0.3, obstacleInterval: 1200, minObstacleInterval: 800, bonusFrequency: 12000, scoreMultiplier: 2 },
-        insane: { initialSpeed: 5, speedIncrease: 0.4, obstacleInterval: 1000, minObstacleInterval: 600, bonusFrequency: 15000, scoreMultiplier: 3 }
+        hard: { initialSpeed: 5, speedIncrease: 0.5, obstacleInterval: 1200, minObstacleInterval: 800, bonusFrequency: 12000, scoreMultiplier: 2 },
+        insane: { initialSpeed: 8, speedIncrease: 0.6, obstacleInterval: 1000, minObstacleInterval: 600, bonusFrequency: 15000, scoreMultiplier: 3 }
     };
     let currentDifficulty = 'medium';
 
@@ -127,47 +127,58 @@ $(function() { // Shorthand for $(document).ready()
     }
 
     function createObstacle() {
-        const now = Date.now();
-        if (now - lastObstacleTime < minObstacleIntervalCurrent) return;
+    const now = Date.now();
+    if (now - lastObstacleTime < minObstacleIntervalCurrent) return;
 
-        let lanesToSpawn = [];
-        if (currentDifficulty === 'insane' && Math.random() < 0.5 || currentDifficulty === 'hard' && Math.random() < 0.3 || currentDifficulty === 'medium' && Math.random() < 0.15) {
-            let firstLane = findAvailableLaneIndex();
-            if (firstLane !== -1) {
-                lanesToSpawn.push(firstLane);
-                let secondLane = findAvailableLaneIndex();
-                if (secondLane !== -1 && secondLane !== firstLane) {
-                    lanesToSpawn.push(secondLane);
-                }
-            }
-        } else {
-            const singleLane = findAvailableLaneIndex();
-            if (singleLane !== -1) {
-                lanesToSpawn.push(singleLane);
+    let lanesToSpawn = [];
+    if (currentDifficulty === 'insane' && Math.random() < 0.5 || currentDifficulty === 'hard' && Math.random() < 0.3 || currentDifficulty === 'medium' && Math.random() < 0.15) {
+        let firstLane = findAvailableLaneIndex();
+        if (firstLane !== -1) {
+            lanesToSpawn.push(firstLane);
+            let secondLane = findAvailableLaneIndex();
+            if (secondLane !== -1 && secondLane !== firstLane) {
+                lanesToSpawn.push(secondLane);
             }
         }
-
-        if (lanesToSpawn.length === 0) return;
-
-        lastObstacleTime = now;
-
-        lanesToSpawn.forEach(laneIndex => {
-            const obstacle = $('<div>').addClass('obstacle');
-            const obstacleWidth = 60;
-            obstacle.css('left', lanePositions[laneIndex] - obstacleWidth / 2 + 'px');
-
-            gameContainer.append(obstacle);
-            obstacles.push(obstacle);
-            laneLastSpawnTime[laneIndex] = now;
-        });
-
-        if (score > 0 && score % 10 === 0) {
-            speed += difficultySettings[currentDifficulty].speedIncrease;
-            if (minObstacleIntervalCurrent > 400) {
-                minObstacleIntervalCurrent -= 50;
-            }
+    } else {
+        const singleLane = findAvailableLaneIndex();
+        if (singleLane !== -1) {
+            lanesToSpawn.push(singleLane);
         }
     }
+
+    if (lanesToSpawn.length === 0) return;
+
+    lastObstacleTime = now;
+
+    const obstacleImages = [
+        'ESTNAC/assets/images/cone.png',
+        'ESTNAC/assets/images/log.png',
+        'ESTNAC/assets/images/rock.png'
+    ];
+
+    lanesToSpawn.forEach(laneIndex => {
+        const randomImageIndex = Math.floor(Math.random() * obstacleImages.length);
+        const obstacle = $('<img>').addClass('obstacle').attr('src', obstacleImages[randomImageIndex]);
+        let obstacleWidth = 60; // Alapértelmezett szélesség
+        if (obstacleImages[randomImageIndex] === 'ESTNAC/assets/images/log.png') {
+            obstacleWidth = 120; // Dupla szélesség a log-nak
+        }
+        obstacle.css('left', lanePositions[laneIndex] - obstacleWidth / 2 + 'px');
+        obstacle.css('width', obstacleWidth + 'px'); //explicit módon beállítjuk a szélességet
+
+        gameContainer.append(obstacle);
+        obstacles.push(obstacle);
+        laneLastSpawnTime[laneIndex] = now;
+    });
+
+    if (score > 0 && score % 10 === 0) {
+        speed += difficultySettings[currentDifficulty].speedIncrease;
+        if (minObstacleIntervalCurrent > 400) {
+            minObstacleIntervalCurrent -= 50;
+        }
+    }
+}
 
     function createBonus() {
         if (isGameOver) return;
@@ -215,8 +226,6 @@ $(function() { // Shorthand for $(document).ready()
                 bonuses.splice(i, 1);
                 score += 5 * difficultySettings[currentDifficulty].scoreMultiplier;
                 scoreElement.text(`Pontszám: ${score}`);
-                player.css('background-color', '#2ecc71');
-                setTimeout(() => { player.css('background-color', '#5d9cec'); }, 300);
                 continue;
             }
 

@@ -53,12 +53,10 @@ body {
 
 #player {
     position: absolute;
-    width: 50px;
-    height: 80px;
-    background-color: #5d9cec;
-    border-radius: 5px;
+    width: 60px;
+    height: 100px;
     bottom: 20px;
-    left: 175px; /* Initial position, will be updated by JS */
+    left: 175px;
     transition: left 0.2s ease;
     z-index: 100;
 }
@@ -67,8 +65,6 @@ body {
     position: absolute;
     width: 60px;
     height: 60px;
-    background-color: #e74c3c;
-    border-radius: 5px;
     top: -60px;
 }
 
